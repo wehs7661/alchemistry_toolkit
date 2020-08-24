@@ -2,16 +2,16 @@ import os
 import numpy as np
 import pytest
 import copy
-import alchemistry_toolkit
-from alchemistry_toolkit.parsers.log_parser import *
+#import alchemistry_toolkit
+#from alchemistry_toolkit.parsers.log_parser import *
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(current_path, 'sample_files')
 
-file_lambda_MetaD = 'sample_files/lambda_MetaD.log'
-file_EXE_updating = 'sample_files/EXE_updating.log'
-file_EXE_equilibrated = 'sample_files/EXE_equilibrated.log'
-file_EXE_fixed = 'sample_files/EXE_fixed.log'
+file_lambda_MetaD = data_path + '/lambda_MetaD.log'
+file_EXE_updating = data_path + '/EXE_updating.log'
+file_EXE_equilibrated = data_path + '/EXE_equilibrated.log'
+file_EXE_fixed = data_path + '/EXE_fixed.log'
 
 # Test_1: lambda-MetaD simulaiton
 test_1 = EXE_LogInfo(file_lambda_MetaD)
