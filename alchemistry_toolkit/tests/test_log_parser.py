@@ -29,14 +29,14 @@ class Test_EXE_LogInfo:
          
     def test_init(self):
         expected_1 = {'init_w': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                      'input': 'sample_files/lambda_MetaD.log', 'dt': 0.002, 
+                      'input': data_path + 'sample_files/lambda_MetaD.log', 'dt': 0.002, 
                       'nstlog': 1000, 'N_states': 9, 'fixed': False, 'cutoff': 0.001, 
                       'wl_scale': 0.8, 'wl_ratio': 0.8, 'init_wl': 0.5, 'temp': 298.0, 
                       'plumed_ver': '2.7.0-dev', 'type': 'lambda-MetaD', 'start': 506}
 
         # the metadata of EXE_upating.log and EXE_equilibrated.log are the same
         expected_2 = {'init_w': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 
-                      'input': 'sample_files/EXE_updating.log', 'dt': 0.002, 
+                      'input': data_path + 'sample_files/EXE_updating.log', 'dt': 0.002, 
                       'nstlog': 1000.0, 'N_states': 9, 'fixed': False, 'cutoff': 0.001, 
                       'wl_scale': 0.8, 'wl_ratio': 0.8, 'init_wl': 0.5, 'temp': 298.0, 
                       'start': 455, 'type': 'expanded_ensemble'}   
@@ -45,7 +45,7 @@ class Test_EXE_LogInfo:
         expected_3['input'] = 'sample_files/EXE_equilibrated.log'
 
         expected_4 = {'init_w': [0.0, 7.67256, 13.8818, 16.9028, 18.8082, 20.5498, 21.2318, 17.6905, 14.8862], 
-                      'input': 'sample_files/EXE_fixed.log', 'dt': 0.002, 
+                      'input': data_path + 'sample_files/EXE_fixed.log', 'dt': 0.002, 
                       'nstlog': 1000.0, 'N_states': 9, 'fixed': True, 'wl_scale': 0.8, 
                       'wl_ratio': 0.8, 'init_wl': 1, 'temp': 298.0, 'start': 454, 
                       'type': 'expanded_ensemble'}
