@@ -6,7 +6,7 @@ import alchemistry_toolkit
 from alchemistry_toolkit.parsers.log_parser import *
 
 current_path = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(current_path, 'sample_data')
+data_path = os.path.join(current_path, 'sample_files')
 
 file_lambda_MetaD = 'sample_files/lambda_MetaD.log'
 file_EXE_updating = 'sample_files/EXE_updating.log'
