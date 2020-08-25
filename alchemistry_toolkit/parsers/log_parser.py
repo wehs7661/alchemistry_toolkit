@@ -1,8 +1,9 @@
+import os 
 import sys
 import numpy as np
 import copy 
-sys.path.append('../')
-from utils import ParameterError
+#sys.path.append('../')
+from alchemistry_toolkit.utils import ParameterError
 
 global kb, Na
 kb = 1.38064852E-23     # Boltzmann constant
@@ -11,7 +12,7 @@ Na = 6.0221409E23       # Avogadro's number
 def logger(output, *args, **kwargs):
     print(*args, **kwargs)
     with open(output, "a") as f:
-        print(file=f, *arsg, **kwargs)
+        print(file=f, *args, **kwargs)
 
 def set_params(obj, line, param_name, attr_name=None, dtype=float):
     """
