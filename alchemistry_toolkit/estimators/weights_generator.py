@@ -1,7 +1,7 @@
 import sys
 import numpy as np 
 sys.path.append('../')
-from parsers.log_parser import EXE_LogInfo
+from alchemistry_toolkit.parsers.log_parser import EXE_LogInfo
 
 def adjust_weights(counts, weights):
     """
