@@ -7,7 +7,6 @@ A toolkit of data analysis for alchemical calculations or relevant advanced samp
 from .alchemistry_toolkit import *
 from .parsers import *
 from .estimators import *
-import alehcmistry_toolkit.utils
 
 # Handle versioneer
 from ._version import get_versions
