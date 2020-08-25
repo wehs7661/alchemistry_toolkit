@@ -79,6 +79,15 @@ class Test_EXE_LogInfo:
         assert test_3.final_t == 5000
         assert test_4.final_t == 5000
 
+        assert test_1.err_kt_f == 0.12971
+        assert test_1.err_kcal_f == 0.07681
+        assert test_2.err_kt_f == 1.17007
+        assert test_2.err_kcal_f == 0.6929
+        assert test_3.err_kt_f == 0.76429
+        assert test_3.err_kcal_f == 0.4526
+        assert test_4.err_kt_f == 1.21703
+        assert test_4.err_kcal_f == 0.72071
+
         assert test_2.EXE_status == 'updating'
 
     
@@ -108,14 +117,39 @@ class Test_EXE_LogInfo:
                        0.0057646, 0.0046117, 0.0036893, 0.0029515, 0.0023612, 0.0018889, 
                        0.0015112, 0.0012089, 0.0009671])
         equil_c = np.array([3158.0, 3449.0, 3599.0, 3654.0, 3723.0, 3576.0, 3408.0, 4653.0, 4722.0])
-        equil_w = ' 0.00000 7.67256 13.88177 16.90285 18.80824 20.54981 21.23185 17.69051 14.88619\n'
+        equil_w = np.array([0.0, 7.67256, 13.88177, 16.90285, 18.80824, 20.54981, 21.23185, 17.69051, 14.88619])
 
         np.testing.assert_array_almost_equal(t2, test_3.get_WL_data()[0], 10)
         np.testing.assert_array_almost_equal(w2, test_3.get_WL_data()[1], 10)
         np.testing.assert_array_almost_equal(equil_c, test_3.equil_c, 10)
+        np.testing.assert_array_almost_equal(equil_w, test_3.equil_w, 10)
         assert test_3.EXE_status == 'equilibrated'
         assert test_3.equil_t == 2.87516
-        assert test_3.equil_w == equil_w
+        assert test_3.max_Nratio == 1.25208
+        assert test_3.min_Nratio == 0.83737
+        assert test_3.err_kt_eq == 0.40229
+        assert test_3.err_kcal_eq == 0.23823
+
+    def test_log_avg_weights(self):
+        warning_msg = 'Warning: The starting point of the weights average calculation is less than 0!'
+        # Test 1: lambda_MetaD
+        # 3 cases: 0 avg_len (last time frame), avg_len = 0.5 ns and avg_len that makes avg_start < 0
+        expected_1 = np.array([0, 7.66575, 13.84021, 16.75152, 18.6663, 20.22582,
+                               20.67918, 18.37936, 15.97026])
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0), test_1.get_final_data()[1], 10)
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0.5), expected_1)
+        with pytest.raises(ParameterError) as excinfo:
+            test_1.get_avg_weights(10)
+        assert warning_msg in str(excinfo.value)
+
+        # Test 2: EXE_updating (same 3 cases)
+        expected_2 = np.array([0, 7.93699, 14.39662, 17.3499, 19.25623, 20.66567,
+                               21.03439, 17.61453, 14.88082])
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0), test_2.get_final_data()[1], 10)
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.5), expected_2)
+        with pytest.raises(ParameterError) as excinfo:
+            test_2.get_avg_weights(2)
+        assert warning_msg in str(excinfo.value)
         
 
     

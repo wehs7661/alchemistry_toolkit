@@ -1,5 +1,12 @@
+import sys
 import numpy as np
 import copy 
+sys.path.append('../')
+from utils import ParameterError
+
+global kb, Na
+kb = 1.38064852E-23     # Boltzmann constant
+Na = 6.0221409E23       # Avogadro's number
 
 def logger(output, *args, **kwargs):
     print(*args, **kwargs)
@@ -79,11 +86,8 @@ class EXE_LogInfo:
                 break     
 
         # Determine the simulation type
-        if hasattr(self, 'plumed_ver') is False:
-            if free_energy == 'no':
-                self.type = 'lambda_MD'
-            elif free_energy == 'expanded':
-                self.type = 'expanded_ensemble'
+        if hasattr(self, 'plumed_ver') is False and free_energy == 'expanded':
+            self.type = 'expanded_ensemble'
 
     def get_final_data(self):
         """
@@ -128,6 +132,9 @@ class EXE_LogInfo:
                 if hasattr(self, 'final_t') is False:
                     self.final_t = float(lines[line_n - 1].split()[1])  # in ps
                 break 
+
+        self.err_kt_f = np.round(np.abs(np.log(final_counts[0] / final_counts[-1])), 5)
+        self.err_kcal_f = np.round(self.err_kt_f * (kb * Na * float(self.temp) / 1000) * 0.23900573613, 5)
             
         return final_counts, final_weights
     
@@ -169,6 +176,7 @@ class EXE_LogInfo:
                 # Part 1: Basic information
                 self.EXE_status = 'equilibrated'
                 self.equil_c = []   # equilibrated counts
+                self.equil_w = []   # equilibrated weights
                 equil_step = l.split(':')[0].split()[1]
                 self.equil_t = np.round(float(equil_step) * self.dt / 1000, 5)  # units: ns
 
@@ -176,7 +184,10 @@ class EXE_LogInfo:
                 search_lines = lines[line_n - 8 : line_n]  
                 for l_search in search_lines:
                     if 'weights are now: ' in l_search:
-                        self.equil_w = l_search.split(':')[2]  # type: str
+                        self.equil_w = [float(l_search.split(':')[2].split()[i]) for i in range(self.N_states)]
+
+                        # convert to str:
+                        # " ".join([str(self.equil_w[i]) for i in range(len(self.equil_w))])
 
                 # Part 3: Search for equilibrated counts
                 search_lines = lines[line_n - (30 + self.N_states): line_n]  # for searching equilibrated counts
@@ -184,19 +195,92 @@ class EXE_LogInfo:
                 for l_search in search_lines:
                     search_line_n += 1
                     if 'MC-lambda information' in l_search:  # lines[search_line_n - 1]
-                        print(lines[search_line_n - 1])
                         for i in range(self.N_states):
                             if lines[search_line_n + 2 + i].split()[-1] == '<<':
                                 self.equil_c.append(float(lines[search_line_n + 2 + i].split()[-4]))
                             else:
                                 self.equil_c.append(float(lines[search_line_n + 2 + i].split()[-3]))
-                    
+
+                # Part 4: N_ratio (max and min)
+                avg_counts =  sum(self.equil_c) / len(self.equil_c)
+                self.max_Nratio = np.round(max(self.equil_c) / avg_counts, 5)
+                self.min_Nratio = np.round(min(self.equil_c) / avg_counts, 5)
+
+                # Part 5: Uncertainty estimation based on equilibrated data
+                kb = 1.38064852E-23     # Boltzmann constant
+                Na = 6.0221409E23       # Avogadro's number
+                self.err_kt_eq = np.round(np.abs(np.log(self.equil_c[0] / self.equil_c[-1])), 5)
+                self.err_kcal_eq = np.round(self.err_kt_eq * (kb * Na * float(self.temp) / 1000) * 0.23900573613, 5)
+                
                 break 
         
         update_time = np.array(step) * self.dt / 1000  # time array for plotting (units :ns)
         delta_w = np.array(delta_w)
 
         return update_time, delta_w
+
+    def get_avg_weights(self, avg_len):
+        """
+        This function performs the weights average calculation.
+
+        Parameters
+        ----------
+        avg_len (float): the period which the weights average over. Value of 1 means averaing 
+                         the last 1 ns of the simulation.
+        
+        Returns
+        -------
+        weights_avg (np.array): The average of the weights over a certain period.
+        """
+        # This function does not apply to self.EXE_status == 'equlibrated' or 'fixed'
+        if hasattr(self, 'final_t') is False:
+            _, _ = self.get_final_data()
+        avg_start = self.final_t - avg_len * 1000   # units: ps
+        if avg_start < 0: 
+            raise ParameterError('Warning: The starting point of the weights average calculation is less than 0!')
+
+        f = open(self.input, 'r')
+        lines = f.readlines()
+        f.close()
+
+        search_start = False 
+        line_n = self.start
+        weights = []        # to store weights at each time frame to be averaged
+        weights_all = []    # a list of lists of weights at different time frames
+
+        # collect the weights to be averaged
+        for l in lines[self.start:]:    # skip the metadata
+            line_n += 1
+
+            if 'Step' in l and 'Time' in l:
+                if (avg_start / self.dt) == float(lines[line_n].split()[0]) and \
+                    avg_start == float(lines[line_n].split()[1]):
+                    search_start = True 
+                
+            if 'MC-lambda information' in l and search_start is True:
+                for i in range(self.N_states):
+                    if hasattr(self, 'EXE_status') is True and self.EXE_status == 'updating':
+                        if lines[line_n + i + 2].split()[-1] == '<<':
+                            weights.append(float(lines[line_n + i + 2].split()[-3]))
+                        else:
+                            weights.append(float(lines[line_n + i + 2].split()[-2]))
+                    else:   # lambda-MetaD
+                        if lines[line_n + i + 1].split()[-1] == '<<':
+                            weights.append(float(lines[line_n + i + 1].split()[-3]))
+                        else:
+                            weights.append(float(lines[line_n + i + 1].split()[-2]))
+                weights_all.append(weights)
+                weights = []
+
+        weights_all = np.array(weights_all)
+        weights_avg = np.array(list(map(lambda x: np.round(x, 5), sum(weights_all)/len(weights_all))))
+
+        return weights_avg
+
+
+        
+
+
 
                 
 
