@@ -4,10 +4,7 @@ A toolkit of data analysis for alchemical calculations or relevant advanced samp
 """
 
 # Add imports here
-from alchemistry_toolkit import parsers
-from alchemistry_toolkit import estimators
-from alchemistry_toolkit import utils
-#from .alchemistry_toolkit import *
+from .alchemistry_toolkit import *  # e.g. canvas
 #from .parsers import *
 #from .estimators import *
 

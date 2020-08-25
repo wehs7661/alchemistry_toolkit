@@ -2,7 +2,6 @@ import os
 import numpy as np
 import pytest
 import copy
-import alchemistry_toolkit
 from alchemistry_toolkit.parsers.log_parser import *
 
 current_path = os.path.dirname(os.path.abspath(__file__))

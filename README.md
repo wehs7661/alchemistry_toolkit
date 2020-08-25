@@ -5,7 +5,7 @@ alchemistry_toolkit
 [![codecov](https://codecov.io/gh/wehs7661/alchemistry_toolkit/branch/master/graph/badge.svg)](https://codecov.io/gh/wehs7661/alchemistry_toolkit/branch/master)
 
 
-A toolkit of data analysis for alchemical calculations or relevant advanced sampling methods
+A toolkit of data analysis for alchemical calculations and relevant advanced sampling methods
 
 ### Copyright
 

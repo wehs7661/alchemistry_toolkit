@@ -2,8 +2,9 @@ import os
 import sys
 import numpy as np
 import copy 
-#sys.path.append('../')
-from alchemistry_toolkit.utils import ParameterError
+sys.path.append('../')
+from utils import ParameterError
+#from alchemistry_toolkit.utils import ParameterError
 
 global kb, Na
 kb = 1.38064852E-23     # Boltzmann constant
@@ -149,9 +150,8 @@ class EXE_LogInfo:
 
         Returns
         -------
-        update_time (np.array):
-        delta_w (np.array)
-
+        update_time (np.array): the array of time at which the WL incrementor was updated
+        delta_w (np.array): Wang Landau incrementor as a function of time
         """
         f = open(self.input, 'r')
         lines = f.readlines()
