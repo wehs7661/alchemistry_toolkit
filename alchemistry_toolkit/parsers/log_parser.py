@@ -230,7 +230,8 @@ class EXE_LogInfo:
         
         Returns
         -------
-        weights_avg (np.array): The average of the weights over a certain period.
+        weights_avg (np.array): the average of the weights over a certain period
+        free_energy_diff (np.array): free energy difference as a function of time
         """
         # This function does not apply to self.EXE_status == 'equlibrated' or 'fixed'
         if hasattr(self, 'final_t') is False:
@@ -248,7 +249,7 @@ class EXE_LogInfo:
         weights = []        # to store weights at each time frame to be averaged
         weights_all = []    # a list of lists of weights at different time frames
 
-        # collect the weights to be averaged
+        # Part 1: Average weights calculation
         for l in lines[self.start:]:    # skip the metadata
             line_n += 1
 
@@ -275,7 +276,10 @@ class EXE_LogInfo:
         weights_all = np.array(weights_all)
         weights_avg = np.array(list(map(lambda x: np.round(x, 5), sum(weights_all)/len(weights_all))))
 
-        return weights_avg
+        # Part 2: Free energy estimate from averaging (more suitable for 1D lambda-MetaD)
+        free_energy_diff = np.array([weights_all[i][-1] for i in range(len(weights_all))])
+
+        return weights_avg, free_energy_diff
 
 
         

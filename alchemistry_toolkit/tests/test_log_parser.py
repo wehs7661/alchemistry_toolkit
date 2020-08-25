@@ -133,20 +133,30 @@ class Test_EXE_LogInfo:
     def test_log_avg_weights(self):
         warning_msg = 'Warning: The starting point of the weights average calculation is less than 0!'
         # Test 1: lambda_MetaD
-        # 3 cases: 0 avg_len (last time frame), avg_len = 0.5 ns and avg_len that makes avg_start < 0
-        expected_1 = np.array([0, 7.66575, 13.84021, 16.75152, 18.6663, 20.22582,
-                               20.67918, 18.37936, 15.97026])
-        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0), test_1.get_final_data()[1], 10)
-        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0.5), expected_1)
+        # 3 cases: 0 avg_len (last time frame), avg_len = 0.01 ns and avg_len that makes avg_start < 0
+        expected_1 = np.array([ 0, 7.64644, 13.94576, 17.01108, 18.99344, 20.40077,
+                               20.41216, 18.10093, 15.26629])
+        f1 = np.array([14.72797, 14.8941, 15.22571, 15.53723, 15.59485, 15.61786])
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0)[0], test_1.get_final_data()[1], 10)
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0)[1], test_1.get_final_data()[1][-1], 10)
+        
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0.01)[0], expected_1)
+        np.testing.assert_array_almost_equal(test_1.get_avg_weights(0.01)[1], f1)
+        
         with pytest.raises(ParameterError) as excinfo:
             test_1.get_avg_weights(10)
         assert warning_msg in str(excinfo.value)
 
         # Test 2: EXE_updating (same 3 cases)
-        expected_2 = np.array([0, 7.93699, 14.39662, 17.3499, 19.25623, 20.66567,
-                               21.03439, 17.61453, 14.88082])
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0), test_2.get_final_data()[1], 10)
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.5), expected_2)
+        expected_2 = np.array([ 0, 7.83155, 14.36196, 17.35015, 19.02816, 20.36195,
+                               20.82935, 19.54115, 16.9112 ])
+        f2 = np.array([17.25588, 17.25588, 17.25588, 16.95323, 16.45602, 16.29028])
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0)[0], test_2.get_final_data()[1], 10)
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0)[1], test_2.get_final_data()[1][-1], 10)
+
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.01)[0], expected_2)
+        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.01)[1], f2)
+
         with pytest.raises(ParameterError) as excinfo:
             test_2.get_avg_weights(2)
         assert warning_msg in str(excinfo.value)
