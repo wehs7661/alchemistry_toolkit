@@ -130,9 +130,13 @@ class Test_EXE_LogInfo:
         assert test_3.err_kcal_eq == 0.23823
 
     def test_log_avg_weights(self):
-        warning_msg = 'Warning: The starting point of the weights average calculation is less than 0!'
+        warning_msg_1 = 'Warning: The starting point of the weights average calculation is less than 0!'
+        warning_msg_2 = 'Warning: The method does not apply to the simulation being analyzed!'
+        warning_msg_3 = 'Warning: Invalid parameter specified!'
+        
         # Test 1: lambda_MetaD
-        # 3 cases: 0 avg_len (last time frame), avg_len = 0.01 ns and avg_len that makes avg_start < 0
+        # 3 cases with the final method: 
+        # (1) 0 avg_len (last time frame), (2) avg_len = 0.01 ns and (3) avg_len that makes avg_start < 0
         expected_1 = np.array([ 0, 7.64644, 13.94576, 17.01108, 18.99344, 20.40077,
                                20.41216, 18.10093, 15.26629])
         f1 = np.array([14.72797, 14.8941, 15.22571, 15.53723, 15.59485, 15.61786])
@@ -144,21 +148,47 @@ class Test_EXE_LogInfo:
         
         with pytest.raises(ParameterError) as excinfo:
             test_1.get_avg_weights(10)
-        assert warning_msg in str(excinfo.value)
+        assert warning_msg_1 in str(excinfo.value)
 
-        # Test 2: EXE_updating (same 3 cases)
-        expected_2 = np.array([ 0, 7.83155, 14.36196, 17.35015, 19.02816, 20.36195,
-                               20.82935, 19.54115, 16.9112 ])
-        f2 = np.array([17.25588, 17.25588, 17.25588, 16.95323, 16.45602, 16.29028])
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0)[0], test_2.get_final_data()[1], 10)
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0)[1], test_2.get_final_data()[1][-1], 10)
+        # equilibrated method with lambda-MetaD
+        with pytest.raises(SimulationTypeError) as excinfo:
+            test_1.get_avg_weights(0.5, method='equilibrated')
+        assert warning_msg_2 in str(excinfo.value)
 
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.01)[0], expected_2)
-        np.testing.assert_array_almost_equal(test_2.get_avg_weights(0.01)[1], f2)
+        # invalid parameter
+        with pytest.raises(ParameterError) as excinfo:
+            test_1.get_avg_weights(0.5, method='test')
+        assert warning_msg_3 in str(excinfo.value)
+
+        # Test 2: EXE_equilibrated with the final method (same 3 cases)
+        expected_2 = np.array([0, 7.67256, 13.88177, 16.90285, 18.80824, 20.54981,
+                               21.23185, 17.69051, 14.88619])
+        f2 = np.array([14.88619, 14.88619, 14.88619, 14.88619, 14.88619, 14.88619])
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0)[0], test_3.get_final_data()[1], 10)
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0)[1], test_3.get_final_data()[1][-1], 10)
+
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0.01)[0], expected_2)
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0.01)[1], f2)
 
         with pytest.raises(ParameterError) as excinfo:
-            test_2.get_avg_weights(2)
-        assert warning_msg in str(excinfo.value)
+            test_3.get_avg_weights(10)
+        assert warning_msg_1 in str(excinfo.value)
+
+        # Test 3: EXE_equilibrated with the equilibrated method
+        expected_3 = np.array([0, 7.55507, 13.70642, 16.71106, 18.61573, 20.35754,
+                               21.03571, 17.49389, 14.68957])
+        f3 = np.array([14.62137, 14.62379, 14.6516 , 14.73141, 14.81968])
+        test_3.get_WL_data()
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0, method='equilibrated')[0], test_3.equil_w, 10)    
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0, method='equilibrated')[1], test_3.equil_w[-1], 10)
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0.01, method='equilibrated')[0], expected_3)
+        np.testing.assert_array_almost_equal(test_3.get_avg_weights(0.01, method='equilibrated')[1], f3)
+
+        with pytest.raises(ParameterError) as excinfo:
+            test_3.get_avg_weights(5, method='equilibrated')
+        assert warning_msg_1 in str(excinfo.value)
+
+
         
 
     

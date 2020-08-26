@@ -2,9 +2,9 @@ import os
 import sys
 import numpy as np
 import copy 
-#sys.path.append('../')
-#from utils import ParameterError
-from alchemistry_toolkit.utils import ParameterError
+sys.path.append('../')
+from utils import *
+#from alchemistry_toolkit.utils import *
 
 global kb, Na
 kb = 1.38064852E-23     # Boltzmann constant
@@ -244,7 +244,7 @@ class EXE_LogInfo:
 
         return update_time, delta_w
 
-    def get_avg_weights(self, avg_len):
+    def get_avg_weights(self, avg_len, method='final'):
         """
         This function performs the weights average calculation.
 
@@ -257,14 +257,36 @@ class EXE_LogInfo:
         -------
         weights_avg      (np.array): the average of the weights over a certain period
         free_energy_diff (np.array): free energy difference as a function of time
+        method           (str): the type of weights average calculaiton. (Options: equilibrated, final)
         """
         # This function only applies to EXE in which the weights are equilibrated or lambda-MetaD.
-        if hasattr(self, 'final_t') is False:
-            _, _ = self.get_final_data()
-        avg_start = self.final_t - avg_len * 1000   # units: ps
+        if method == 'final':
+            if hasattr(self, 'final_t') is False:
+                _, _ = self.get_final_data()
+                avg_start = self.final_t - avg_len * 1000       # units: ps
+            else:
+                avg_start = self.final_t - avg_len * 1000       # units: ps
+            avg_end = self.final_t      # units: ps
+        elif method == 'equilibrated':
+            if hasattr(self, 'equil_t') is False:
+                _, _ = self.get_WL_data()
+                if hasattr(self, 'equil_t') is False:  # EXE but not equilibrated weights or lambda-MetaD
+                    raise SimulationTypeError('Warning: The method does not apply to the simulation being analyzed!')
+                else:
+                    # 2 nd line considers the case that the counts corresponding to the exact equil_t did not printed out in the log file
+                    avg_start = (self.equil_t - avg_len) * 1000   # units: ps
+                    avg_start = np.ceil(avg_start / (self.dt * self.nstlog)) * (self.dt * self.nstlog)
+            else: 
+                avg_start = (self.equil_t - avg_len) * 1000   # units: ps
+                avg_start = np.ceil(avg_start / (self.dt * self.nstlog)) * (self.dt * self.nstlog) 
+            avg_end = np.ceil(self.equil_t * 1000 / (self.dt * self.nstlog)) * (self.dt * self.nstlog)
+        else:
+            raise ParameterError('Warning: Invalid parameter specified!')
+        
         if avg_start < 0: 
             raise ParameterError('Warning: The starting point of the weights average calculation is less than 0!')
 
+        # Start the data analysis
         f = open(self.input, 'r')
         lines = f.readlines()
         f.close()
@@ -275,31 +297,50 @@ class EXE_LogInfo:
         weights_all = []    # a list of lists of weights at different time frames
 
         # Part 1: Average weights calculation
-        # Case 1: EXE in which the weights are equilibrated (sample file: EXE_equilibrated.log)
-
         for l in lines[self.start:]:    # skip the metadata
             line_n += 1
 
-            if 'Step' in l and 'Time' in l:
+            if 'Step' in l and 'Time' in l and search_start is False:
                 if (avg_start / self.dt) == float(lines[line_n].split()[0]) and \
                     avg_start == float(lines[line_n].split()[1]):
-                    search_start = True 
-                
+                        search_start = True
+
+            if 'Step' in l and 'Time' in l:
+                print(lines[line_n].split()[1])
+                if method == 'equilibrated' and avg_len > 0:
+                     if (avg_end / self.dt) == float(lines[line_n].split()[0]) and \
+                        avg_end == float(lines[line_n].split()[1]):
+                        break
+                else:  # for the final method or equil method with avg_len
+                    if (avg_end / self.dt) < float(lines[line_n].split()[0]) and \
+                        avg_end < float(lines[line_n].split()[1]):
+                        break
+
             if 'MC-lambda information' in l and search_start is True:
                 for i in range(self.N_states):
-                    if hasattr(self, 'EXE_status') is True and self.EXE_status == 'updating':
+                    if method == 'equilibrated' and avg_len > 0:
                         if lines[line_n + i + 2].split()[-1] == '<<':
                             weights.append(float(lines[line_n + i + 2].split()[-3]))
                         else:
                             weights.append(float(lines[line_n + i + 2].split()[-2]))
-                    else:   # lambda-MetaD
+                    else:   # EXE_equil with the final method (or equil method with avg_len == 0) or lambda-MetaD 
                         if lines[line_n + i + 1].split()[-1] == '<<':
                             weights.append(float(lines[line_n + i + 1].split()[-3]))
                         else:
                             weights.append(float(lines[line_n + i + 1].split()[-2]))
                 weights_all.append(weights)
                 weights = []
-
+            """
+            if 'Step' in l and 'Time' in l:
+                if method == 'equilbrated':
+                    if (avg_end / self.dt) == float(lines[line_n].split()[0]) and \
+                        avg_end == float(lines[line_n].split()[1]):
+                        break
+                else:  # for the final method or equil method with avg_len
+                    if (avg_end / self.dt) < float(lines[line_n].split()[0]) and \
+                        avg_end < float(lines[line_n].split()[1]):
+                        break
+            """
         weights_all = np.array(weights_all)
         weights_avg = np.array(list(map(lambda x: np.round(x, 5), sum(weights_all)/len(weights_all))))
 
@@ -307,33 +348,4 @@ class EXE_LogInfo:
         free_energy_diff = np.array([weights_all[i][-1] for i in range(len(weights_all))])
 
         return weights_avg, free_energy_diff
-
-
-        
-
-
-
-                
-
-
-
-
-
-
-
-
-
-
-
-
-        
-
-        
-
-                
-
-        
-
-                
-            
 

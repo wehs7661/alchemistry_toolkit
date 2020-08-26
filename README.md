@@ -2,7 +2,7 @@ alchemistry_toolkit
 ==============================
 [//]: # (Badges)
 [![Travis Build Status](https://travis-ci.com/wehs7661/alchemistry_toolkit.svg?branch=master)](https://travis-ci.com/wehs7661/alchemistry_toolkit)
-[![codecov](https://codecov.io/gh/wehs7661/alchemistry_toolkit/branch/master/graph/badge.svg)](https://codecov.io/gh/wehs7661/alchemistry_toolkit/branch/master)
+[![codecov](https://codecov.io/gh/wehs7661/alchemistry_toolkit/branch/master/graph/badge.svg)](https://codecov.io/gh/wehs7661/alchemistry_toolkit)
 
 A toolkit of data analysis for alchemical calculations and relevant advanced sampling methods
 
