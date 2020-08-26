@@ -2,9 +2,9 @@ import os
 import sys
 import numpy as np
 import copy 
-sys.path.append('../')
-from utils import *
-#from alchemistry_toolkit.utils import *
+#sys.path.append('../')
+#from utils import *
+from alchemistry_toolkit.utils import *
 
 global kb, Na
 kb = 1.38064852E-23     # Boltzmann constant
