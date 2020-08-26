@@ -20,12 +20,11 @@ def set_params(obj, line, param_name, attr_name=None, dtype=float):
     Assign the parameters in the log file as attributes of an object (self).
 
     Parameters
-    ----------
-    obj (object): any Python object, typically self
-    line (str): a certain line in the log file
-    param_name (str): the name of the parameter
-    attr_name (str): the name of the attribute
-    dtype (type): the data type of the attribute
+        obj        (object): any Python object, typically self
+        line       (str): a certain line in the log file
+        param_name (str): the name of the parameter
+        attr_name  (str): the name of the attribute
+        dtype      (type): the data type of the attribute
     """
     if attr_name is None:
         attr_name = param_name
@@ -41,8 +40,21 @@ class EXE_LogInfo:
         metadynamics as attributes by parsing the metadat of the log file.
 
         Parameters
-        ----------
-        logfile (str): The filename of the log file
+            logfile    (str): The filename of the log file
+
+        Attributes
+            dt         (float): the simulation time step
+            nstlog     (int): the printing frequency of the log file
+            N_states   (int): the number of states
+            temp       (float): the simulation temperature
+            cutoff     (float): the cutoff value of the Wang-Landau incrementor
+            init_wl    (float): the initial value of the Wang-Landau incrementor
+            wl-ratio   (float): the Wang-Landau ratio
+            wl-scale   (float): the Wang-Landau scaling factor
+            plumed_ver (str): the version of PLUMED used in lambda-MetaD
+            type       (str): the type of simulation
+            fixed      (bool): whether the weights of the simulation are fixed
+            start      (int): the line number where the simulation starts
         """
         f = open(logfile, 'r')
         lines = f.readlines()
@@ -57,7 +69,7 @@ class EXE_LogInfo:
 
             # general parameters
             set_params(self, l, 'dt  ', 'dt')
-            set_params(self, l, 'nstlog')
+            set_params(self, l, 'nstlog', dtype=int)
             set_params(self, l, 'n-lambdas', 'N_states', int)
             if 'ref-t' in l and hasattr(self, 'temp') is False:
                 self.temp = float(l.split(':')[1])
@@ -95,11 +107,16 @@ class EXE_LogInfo:
         """
         This function parses the log file and finds out the count and weight
         of each labmda state at the last time frame.
+        
+        Attributes
+            EXE_status    (str): the status of the weights in expanded ensemble
+            err_kt_f      (float): the uncertainty of free energy difference in kT based on the final counts
+            err_kcal_f    (float): the uncertainty of free energy difference in kcal based on the final counts
+            final_t       (float): the simulation length (units: ps)
 
         Returns
-        -------
-        final_counts (np.array): the counts of states at the last time frame
-        final_weights (np.array): the weights of states at the last time frame
+            final_counts  (np.array): the counts of states at the last time frame
+            final_weights (np.array): the weights of states at the last time frame
         """
         f = open(self.input, 'r')
         lines = f.readlines()
@@ -148,10 +165,17 @@ class EXE_LogInfo:
             uncoupled state) as a function of time
         3. Assign equilibrated weights (if exist) as an attribute
 
+        Attributes
+            EXE_status  (str): the status of the weights in expanded ensemble
+            max_Nratio  (float): the maximum of N_ratio
+            min_Nratio  (float): the minimum of N_ratio
+            err_kt_eq   (float): the uncertainty of free energy difference in kT based on the equilibrated counts
+            err_kcal_eq (float): the uncertainty of free energy difference in kcal based on the equilibrated counts
+            equil_t     (float): the time at which the weights get equilibrated (units: ns)
+
         Returns
-        -------
-        update_time (np.array): the array of time at which the WL incrementor was updated
-        delta_w (np.array): Wang Landau incrementor as a function of time
+            update_time (np.array): the array of time at which the WL incrementor was updated
+            delta_w     (np.array): Wang Landau incrementor as a function of time
         """
         f = open(self.input, 'r')
         lines = f.readlines()
@@ -226,15 +250,15 @@ class EXE_LogInfo:
 
         Parameters
         ----------
-        avg_len (float): the period which the weights average over. Value of 1 means averaing 
-                         the last 1 ns of the simulation.
+        avg_len          (float): the period which the weights average over. Value of 1 means averaing 
+                                  the last 1 ns of the simulation.
         
         Returns
         -------
-        weights_avg (np.array): the average of the weights over a certain period
+        weights_avg      (np.array): the average of the weights over a certain period
         free_energy_diff (np.array): free energy difference as a function of time
         """
-        # This function does not apply to self.EXE_status == 'equlibrated' or 'fixed'
+        # This function only applies to EXE in which the weights are equilibrated or lambda-MetaD.
         if hasattr(self, 'final_t') is False:
             _, _ = self.get_final_data()
         avg_start = self.final_t - avg_len * 1000   # units: ps
@@ -251,6 +275,8 @@ class EXE_LogInfo:
         weights_all = []    # a list of lists of weights at different time frames
 
         # Part 1: Average weights calculation
+        # Case 1: EXE in which the weights are equilibrated (sample file: EXE_equilibrated.log)
+
         for l in lines[self.start:]:    # skip the metadata
             line_n += 1
 
