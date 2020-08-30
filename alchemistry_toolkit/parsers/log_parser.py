@@ -249,15 +249,13 @@ class EXE_LogInfo:
         This function performs the weights average calculation.
 
         Parameters
-        ----------
-        avg_len          (float): the period which the weights average over. Value of 1 means averaing 
-                                  the last 1 ns of the simulation.
+            avg_len          (float): the period which the weights average over. Value of 1 means averaing 
+                                      the last 1 ns of the simulation.
         
         Returns
-        -------
-        weights_avg      (np.array): the average of the weights over a certain period
-        free_energy_diff (np.array): free energy difference as a function of time
-        method           (str): the type of weights average calculaiton. (Options: equilibrated, final)
+            weights_avg      (np.array): the average of the weights over a certain period
+            free_energy_diff (np.array): free energy difference as a function of time
+            method           (str): the type of weights average calculaiton. (Options: equilibrated, final)
         """
         # This function only applies to EXE in which the weights are equilibrated or lambda-MetaD.
         if method == 'final':

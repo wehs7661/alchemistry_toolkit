@@ -188,10 +188,3 @@ class Test_EXE_LogInfo:
             test_3.get_avg_weights(5, method='equilibrated')
         assert warning_msg_1 in str(excinfo.value)
 
-
-        
-
-    
-
-
-
