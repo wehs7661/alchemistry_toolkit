@@ -7,18 +7,11 @@ matrix:
     # Extra includes for OSX since python language is not available by default on OSX
     - os: osx
       language: generic
-      env: PYTHON_VER=3.6
-    - os: osx
-      language: generic
-      env: PYTHON_VER=3.7
-
+      env: PYTHON_VER=3.7 PLUMED_CC=clang PLUMED_CXX=clang++
 
     - os: linux
-      language: generic  # No need to set Python version since its conda
-      env: PYTHON_VER=3.6
-    - os: linux
       language: generic
-      env: PYTHON_VER=3.7
+      env: PYTHON_VER=3.7 PLUMED_CC=mpicc PLUMED_CXX=mpic++
 
 
 before_install:
@@ -33,16 +26,43 @@ before_install:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 install:
-
+    # Set up environment to allow install on the home directory
+  - export PATH="$HOME/opt/bin:$PATH"
+  - export CPATH="$HOME/opt/include:$HOME/opt/arrayfire/include:$CPATH"
+  - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
+  - export LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LIBRARY_PATH"
+  - export LD_LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LD_LIBRARY_PATH"
+  - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"
     # Create test environment for package
   - python devtools/scripts/create_conda_env.py -n=test -p=$PYTHON_VER devtools/conda-envs/test_env.yaml
     # Activate the test environment
   - conda activate test
     # Build and install package
   - python setup.py develop --no-deps
-
+  - if test "$PLUMED_CXX" ; then
+      if test "$TRAVIS_OS_NAME" == "linux" ; then
+        pip install --user Cython ; 
+        pip install --user nose ; 
+        pip install --user numpy ; 
+        pip install --user six ; 
+        pip install --user pandas ;
+        pip install --user mdtraj ;
+        pip install --user MDAnalysis ;
+        python -c "import MDAnalysis" ; 
+        python -c "import mdtraj" ;
+      fi ;
+    fi
 
 script:
+  - if test "$PLUMED_CXX" ; then   # do this only if PUMED_CXX is defined
+      ccache -s ;
+      git clone https://github.com/plumed/plumed2.git ;
+      mkdir plumed2_build ;
+      ./configure --prefix="$HOME/opt" CXX="ccache $(which $PLUMED_CXX)" CC=$(which $PLUMED_CC) ;
+      make -j 4 ;
+      make install ;
+      ccache -s ;
+    fi
   - pytest -v --cov=alchemistry_toolkit alchemistry_toolkit/tests/
 
 notifications:
