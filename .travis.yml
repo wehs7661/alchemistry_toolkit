@@ -6,7 +6,7 @@ matrix:
     # Extra includes for OSX since python language is not available by default on OSX
     - os: osx
       language: generic
-      env: PYTHON_VER=3.7 PLUMED_CC=clang PLUMED_CXX=clang++
+      env: PYTHON_VER=3.7 PLUMED_CC=clang PLUMED_CXX=clang++ PLUMED_CXXFLAGS=-O3
       cache: 
         directories:
         - $HOME/.ccache
@@ -36,6 +36,7 @@ install:
   - export LD_LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LD_LIBRARY_PATH"
   - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"       
   - export PLUMED_KERNEL="$HOME/opt/lib:$HOME/opt/arrayfire/lib/libplumedKernel.so"
+  - export TMPDIR="/tmp"   # prevents problems with the compilation of PLUMED + Python on macos
     # Create test environment for package
   - python devtools/scripts/create_conda_env.py -n=test -p=$PYTHON_VER devtools/conda-envs/test_env.yaml
     # Activate the test environment
