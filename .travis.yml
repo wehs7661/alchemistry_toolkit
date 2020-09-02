@@ -60,6 +60,7 @@ install:
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         brew install ccache ;
+        python -m pip install plumed ;
     fi
 
 script:
