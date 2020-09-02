@@ -1,4 +1,5 @@
 language: python
+cache: ccache
 
 # Run jobs on container-based infrastructure, can be overridden per job
 matrix:
@@ -62,6 +63,7 @@ script:
   - if test "$PLUMED_CXX" ; then   
       ccache -s ;
       git clone https://github.com/plumed/plumed2.git ;
+      cd plumed2 ;
       ./configure --prefix="$HOME/opt" CXX="ccache $(which $PLUMED_CXX)" CC=$(which $PLUMED_CC) ;
       make -j 4 ;
       make install ;
