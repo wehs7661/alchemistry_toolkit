@@ -1,7 +1,6 @@
 language: python
 
 # Run jobs on container-based infrastructure, can be overridden per job
-
 matrix:
   include:
     # Extra includes for OSX since python language is not available by default on OSX
@@ -26,13 +25,12 @@ before_install:
   - export PYTHONPATH=$PYTHONPATH:$(pwd)
 
 install:
-    # Set up environment to allow install on the home directory
+    # Set up environment to allow install on the home directory        
   - export PATH="$HOME/opt/bin:$PATH"
-  - export CPATH="$HOME/opt/include:$HOME/opt/arrayfire/include:$CPATH"
-  - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
+  - export CPATH="$HOME/opt/include:$HOME/opt/arrayfire/include:$CPATH"  - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
   - export LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LIBRARY_PATH"
   - export LD_LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LD_LIBRARY_PATH"
-  - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"
+  - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"        
     # Create test environment for package
   - python devtools/scripts/create_conda_env.py -n=test -p=$PYTHON_VER devtools/conda-envs/test_env.yaml
     # Activate the test environment
@@ -41,20 +39,20 @@ install:
   - python setup.py develop --no-deps
   - if test "$PLUMED_CXX" ; then
       if test "$TRAVIS_OS_NAME" == "linux" ; then
-        pip install --user Cython ; 
-        pip install --user nose ; 
-        pip install --user numpy ; 
-        pip install --user six ; 
+        pip install --user Cython ;
+        pip install --user nose ;
+        pip install --user numpy ;
+        pip install --user six ;
         pip install --user pandas ;
         pip install --user mdtraj ;
         pip install --user MDAnalysis ;
-        python -c "import MDAnalysis" ; 
+        python -c "import MDAnalysis" ;
         python -c "import mdtraj" ;
       fi ;
     fi
 
 script:
-  - if test "$PLUMED_CXX" ; then   # do this only if PUMED_CXX is defined
+  - if test "$PLUMED_CXX" ; then   
       ccache -s ;
       git clone https://github.com/plumed/plumed2.git ;
       mkdir plumed2_build ;
@@ -64,9 +62,3 @@ script:
       ccache -s ;
     fi
   - pytest -v --cov=alchemistry_toolkit alchemistry_toolkit/tests/
-
-notifications:
-    email: false
-
-after_success:
-  - codecov
