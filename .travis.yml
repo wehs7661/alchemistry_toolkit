@@ -7,6 +7,9 @@ matrix:
     - os: osx
       language: generic
       env: PYTHON_VER=3.7 PLUMED_CC=clang PLUMED_CXX=clang++
+      cache: 
+        directories:
+        - $HOME/.ccache
 
     - os: linux
       language: generic
@@ -58,7 +61,6 @@ script:
   - if test "$PLUMED_CXX" ; then   
       ccache -s ;
       git clone https://github.com/plumed/plumed2.git ;
-      mkdir plumed2_build ;
       ./configure --prefix="$HOME/opt" CXX="ccache $(which $PLUMED_CXX)" CC=$(which $PLUMED_CC) ;
       make -j 4 ;
       make install ;
