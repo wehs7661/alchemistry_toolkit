@@ -27,7 +27,8 @@ before_install:
 install:
     # Set up environment to allow install on the home directory        
   - export PATH="$HOME/opt/bin:$PATH"
-  - export CPATH="$HOME/opt/include:$HOME/opt/arrayfire/include:$CPATH"  - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
+  - export CPATH="$HOME/opt/include:$HOME/opt/arrayfire/include:$CPATH"
+  - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
   - export LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LIBRARY_PATH"
   - export LD_LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LD_LIBRARY_PATH"
   - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"        
