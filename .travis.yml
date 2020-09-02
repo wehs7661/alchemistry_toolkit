@@ -31,7 +31,8 @@ install:
   - export INCLUDE="$HOME/opt/include:$HOME/opt/arrayfire/include:$INCLUDE"
   - export LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LIBRARY_PATH"
   - export LD_LIBRARY_PATH="$HOME/opt/lib:$HOME/opt/arrayfire/lib:$LD_LIBRARY_PATH"
-  - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"        
+  - export PYTHONPATH="$HOME/opt/lib/plumed/python:$PYTHONPATH"       
+  - export PLUMED_KERNEL="$HOME/opt/lib:$HOME/opt/arrayfire/lib/libplumedKernel.so"
     # Create test environment for package
   - python devtools/scripts/create_conda_env.py -n=test -p=$PYTHON_VER devtools/conda-envs/test_env.yaml
     # Activate the test environment
@@ -49,6 +50,7 @@ install:
         pip install --user MDAnalysis ;
         python -c "import MDAnalysis" ;
         python -c "import mdtraj" ;
+        python -m pip install plumed ;
       fi ;
     fi
 
