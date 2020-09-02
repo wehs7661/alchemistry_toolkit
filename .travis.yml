@@ -58,12 +58,13 @@ install:
         python -m pip install plumed ;
       fi ;
     fi
+  - if test "$TRAVIS_OS_NAME" == "osx" ; then
+        brew install --HEAD ccache
 
 script:
   - if test "$PLUMED_CXX" ; then   
       ccache -s ;
       git clone https://github.com/plumed/plumed2.git ;
-      cd plumed2 ;
       ./configure --prefix="$HOME/opt" CXX="ccache $(which $PLUMED_CXX)" CC=$(which $PLUMED_CC) ;
       make -j 4 ;
       make install ;
