@@ -1,11 +1,8 @@
-import plumed 
 import os
 import numpy as np
 import pytest
 import copy
 from alchemistry_toolkit.parsers.log_parser import *
-
-os.system("plumed")
 
 current_path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(current_path, 'sample_files')

@@ -67,9 +67,11 @@ script:
   - if test "$PLUMED_CXX" ; then   
       ccache -s ;
       git clone https://github.com/plumed/plumed2.git ;
+      cd plumed2 ; 
       ./configure --prefix="$HOME/opt" CXX="ccache $(which $PLUMED_CXX)" CC=$(which $PLUMED_CC) ;
       make -j 4 ;
       make install ;
       ccache -s ;
+      cd ../ ;
     fi
   - pytest -v --cov=alchemistry_toolkit alchemistry_toolkit/tests/
