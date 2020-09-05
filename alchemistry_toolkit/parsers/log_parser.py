@@ -17,7 +17,7 @@ def logger(output, *args, **kwargs):
 
 def set_params(obj, line, param_name, attr_name=None, dtype=float):
     """
-    Assign the parameters in the log file as attributes of an object (self).
+    This function assigns the parameters in the log file as attributes of an object (self).
 
     Parameters
         obj        (object): any Python object, typically self
@@ -36,7 +36,7 @@ class EXE_LogInfo:
 
     def __init__(self, logfile):
         """
-        Assign the simulation parameters of expanded ensemble or alchemical 
+        This function assigns the simulation parameters of expanded ensemble or alchemical 
         metadynamics as attributes by parsing the metadat of the log file.
 
         Parameters

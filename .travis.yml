@@ -72,6 +72,7 @@ script:
       make -j 4 ;
       make install ;
       ccache -s ;
+      sourche sourceme.sh ;
       cd ../ ;
     fi
   - pytest -v --cov=alchemistry_toolkit alchemistry_toolkit/tests/
