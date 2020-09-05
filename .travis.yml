@@ -46,21 +46,14 @@ install:
   - python setup.py develop --no-deps
   - if test "$PLUMED_CXX" ; then
       if test "$TRAVIS_OS_NAME" == "linux" ; then
-        pip install --user Cython ;
-        pip install --user nose ;
-        pip install --user numpy ;
-        pip install --user six ;
         pip install --user pandas ;
-        pip install --user mdtraj ;
-        pip install --user MDAnalysis ;
-        python -c "import MDAnalysis" ;
-        python -c "import mdtraj" ;
         python -m pip install plumed ;
       fi ;
     fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         brew install ccache ;
         python -m pip install plumed ;
+        pip install --user pandas ;
     fi
 
 script:
