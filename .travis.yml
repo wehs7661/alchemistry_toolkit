@@ -14,7 +14,7 @@ matrix:
 
     - os: linux
       language: generic
-      env: PYTHON_VER=3.7 PLUMED_CC=mpicc PLUMED_CXX=mpic++
+      env: PYTHON_VER=3.7 PLUMED_CC=gcc PLUMED_CXX=g++
 
 
 before_install:
@@ -72,7 +72,7 @@ script:
       make -j 4 ;
       make install ;
       ccache -s ;
-      sourche sourceme.sh ;
+      source sourceme.sh ;
       cd ../ ;
     fi
   - pytest -v --cov=alchemistry_toolkit alchemistry_toolkit/tests/
