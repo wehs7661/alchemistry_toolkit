@@ -4,7 +4,7 @@ import pytest
 from alchemistry_toolkit.estimators.free_energy_estimator import *
 
 current_path = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(current_path, 'sample_files')
+data_path = os.path.join(current_path, 'sample_inputs')
 hills_file = data_path + "/HILLS_2D"
 test = FreeEnergy_HILLS(hills_file)
 
