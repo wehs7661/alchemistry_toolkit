@@ -13,6 +13,7 @@ dependencies:
     # Dependencies
   - numpy
   - matplotlib
+  - seaborn
 
     # Pip-only installs
   #- pip:

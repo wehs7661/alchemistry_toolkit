@@ -91,15 +91,10 @@ class Visualization(Plot_Utils):
         K = len(matrix)
         plt.figure(figsize=(K / 3, K / 3))
         annot_matrix = np.zeros([K, K])   # for annotations
-
-        mask = []
-        for i in range(K):
-            mask.append([])
-            for j in range(len(matrix[0])):
-                if matrix[i][j] < threshold:
-                    mask[-1].append(False)
-                else:
-                    mask[-1].append(False)
+        if K > 5:
+            annot_size = 6
+        else:
+            annot_size = 4
         
         for i in range(K):
             for j in range(K):
@@ -107,8 +102,15 @@ class Visualization(Plot_Utils):
         
         x_tick_labels = y_tick_labels = np.arange(start_idx, start_idx + K)
         ax = sns.heatmap(matrix, cmap="YlGnBu", linecolor='silver', linewidth=0.25,
-                        annot=annot_matrix, annot_kws={"size": 6}, mask=mask, square=True, fmt='.2f', cbar=False, xticklabels=x_tick_labels, yticklabels=y_tick_labels)
-        
+                        annot=annot_matrix, annot_kws={"size": annot_size}, 
+                        mask=matrix < threshold, square=True, fmt='.2f', cbar=False, 
+                        xticklabels=x_tick_labels, yticklabels=y_tick_labels)
+
+        # highlight the diagonal with bold texts
+        for txt in ax.texts:
+            if txt.get_position()[0] == txt.get_position()[1]:
+                txt.set_weight('bold')
+
         ax.xaxis.tick_top()
         ax.tick_params(length=0)
         cmap = cm.get_cmap('YlGnBu')   # to get the facecolor
