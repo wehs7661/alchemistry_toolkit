@@ -12,7 +12,6 @@ class Test_FreeEnergy_HILLS:
     
     def test_init(self):
         assert test.hills == hills_file
-        assert test.t_f == 20000
     
     def test_deltaF_average(self):
         hills_modified = hills_file + '_modified'
@@ -21,11 +20,19 @@ class Test_FreeEnergy_HILLS:
         assert os.path.isfile(hills_modified) is False
         assert os.path.isfile('fes_test') is False
 
-        delta_f = test.deltaF_average(18000, sample_cmd)
+        delta_f_1 = test.deltaF_average(sample_cmd, 18000)
         assert os.path.isfile(hills_modified) is True
         assert os.path.isfile('fes_test') is True
-        assert delta_f == 18.253219211
+        assert delta_f_1 == 18.253219211
 
+        os.system('rm fes_test')
+        os.system(f'rm {hills_modified}')
+
+        delta_f_2 = test.deltaF_average(sample_cmd, 18000, 20000)
+        assert os.path.isfile(hills_modified) is True
+        assert os.path.isfile('fes_test') is True
+        assert delta_f_1 == delta_f_2
+    
         os.system('rm fes_test')
         os.system(f'rm {hills_modified}')
 

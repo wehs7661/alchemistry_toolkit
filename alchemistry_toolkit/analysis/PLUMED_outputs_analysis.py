@@ -12,7 +12,7 @@ def initialize():
     """
     parser = argparse.ArgumentParser(
         description='This code analyzes PLUMED outputs, including performing free energy calculations by running sum_hills on the HILLS file, visualizing the sampling in the configurational space using the COLVAR file or plotting the Gaussian height as a function of time.')
-    parser.add_argument('-h',
+    parser.add_argument('-f',
                         '--hills',
                         type=str,
                         help='The file name of the PLUMED HILLS file.')
@@ -20,7 +20,7 @@ def initialize():
                         '--colvar',
                         help='The file name of the PLUMED COLVAR file.')
 
-    args_parse = parser.parse_args(args)
+    args_parse = parser.parse_args()
 
     # Below we deal the the cases where any arguments are not specified.
     n_hills, n_colvar = 0, 0  # max should be 1
