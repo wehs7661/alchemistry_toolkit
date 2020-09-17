@@ -44,16 +44,8 @@ install:
   - conda activate test
     # Build and install package
   - python setup.py develop --no-deps
-  - if test "$PLUMED_CXX" ; then
-      if test "$TRAVIS_OS_NAME" == "linux" ; then
-        pip install --user pandas ;
-        python -m pip install plumed ;
-      fi ;
-    fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]] ; then
         brew install ccache ;
-        python -m pip install plumed ;
-        pip install --user pandas ;
     fi
 
 script:
