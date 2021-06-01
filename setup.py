@@ -47,7 +47,8 @@ setup(
     # Add entry points
     entry_points={
         'console_scripts':[
-            'PLUMED_outputs_analysis = alchemistry_toolkit.analysis.PLUMED_outputs_analysis:main'
+            'PLUMED_outputs_analysis = alchemistry_toolkit.analysis.PLUMED_outputs_analysis:main',
+            'bootstrap_estimator = alchemistry_toolkit.analysis.bootstrap_estimator:main'
         ],
     },
 

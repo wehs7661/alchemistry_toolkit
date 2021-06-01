@@ -3,15 +3,15 @@ import sys
 import time
 import glob
 import plumed
+import sparse
 import natsort
 import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc
-from tqdm.auto import tqdm
 from prettytable import PrettyTable
-
+from memory_profiler import memory_usage
 
 def initialize():
     parser = argparse.ArgumentParser(
@@ -125,6 +125,30 @@ def clear_directory(file_name):
         for i in file_name:
             clear_directory(i)
 
+def read_plumed_output(plumed_output):
+    """
+    This function modifies the given plumed output file if it is corrupted, meaning that
+    there might be some duplicates in the time series having the same time frames. If the
+    file is not corrupted, this fucntion does nothing but only read in the data. 
+
+    Parameters
+    ----------
+    plumed_output (str): The filename of the plumed output (such as HILLS or COLVAR files) to be read
+    """
+    data_original = plumed.read_as_pandas(plumed_output)
+    data = data_original[~data_original["time"].duplicated(keep='last')]  # deduplicate time frames
+    data = data.dropna()        # drop N/A in case that there is any
+    data = data.reset_index()   # reset the index of the data frame, after this an column "index" will be added
+    data = data.drop(columns=["index"])    # drop the index column
+    if len(data) == len(data_original):
+        # The simulation finished without any timeouts or crashing issues.
+        pass    # the plumed output file won't be modified and there will be no backup
+    else:
+        # the data in the plumed output file will be replaced with the deduplicated time series
+        backup = plumed_output + '_backup'
+        os.system(f'mv {plumed_output} {backup}')
+        plumed.write_pandas(data, plumed_output)  
+    return data
 
 def block_bootstrap(traj, n_blocks, dt, file_path, B, T=298.15, truncate=0, CV='lambda'):
     """
@@ -164,12 +188,16 @@ def block_bootstrap(traj, n_blocks, dt, file_path, B, T=298.15, truncate=0, CV='
     isState, pop, fes, fes_err = [], [], [], []
     for i in range(int(np.max(traj[f"{CV}"])) + 1):
         # 1 if in state i
-        isState.append(np.int_(traj[f"{CV}"] == i)
-                       [-n:].reshape((n_blocks, -1)))
+        isState.append(np.array(traj[f"{CV}"] == i)[-n:].reshape((n_blocks, -1)))  # boolean array (memory-efficient)
         # draw samples from np.arange(n_blocks), size refers the output size
         boot = np.random.choice(n_blocks, size=(B, n_blocks))
-        # isState[boot]: 3D array, shape of pop: (B,)
-        pop.append(np.average(isState[i][boot], axis=(1, 2), weights=w[boot]))
+        # isState[i][boot]: 3D array, shape of pop: (B,) --> could use a lot of memory when using np.average!
+        # We therefore try to use sparse arrays and set dtype as float16
+        #pop.append(np.average(sparse.COO(isState[i][boot].astype('float16')), axis=(1, 2), weights=w[boot]))
+        #pop.append(np.average(isState[i][boot].astype(bool), axis=(1, 2), weights=w[boot]))
+        #masked_array = np.ma.array(w[boot], mask=[isState[i][boot].astype(bool)])
+        #pop.append(np.sum(sparse.COO(np.ma.array(w[boot], mask=[isState[i][boot].astype(bool)])), axis=(1,2)) / np.sum(sparse.COO(isState[i][boot]), axis=(1, 2)))
+        pop.append(np.sum(np.ma.array(w[boot], mask=[isState[i][boot]]), axis=(1,2)) / np.sum(isState[i][boot], axis=(1, 2)))
         fes_boot = np.log(pop[i])
         fes.append(np.log(np.average(isState[i], weights=w)))
         if np.sum(np.isinf(fes_boot)) > 0:   # in case that there are zeros in pop[i]
@@ -193,7 +221,6 @@ def block_bootstrap(traj, n_blocks, dt, file_path, B, T=298.15, truncate=0, CV='
     df_err = np.nanstd(df_boot)    # ignore nan when calculating std
 
     return df, df_err
-
 
 def average_bias(hills, avg_frac):
     """
@@ -222,9 +249,25 @@ def plot_gaussian(mu, sigma):
     y = coef * np.exp(-0.5 * ((x - mu) / sigma) ** 2)
     plt.plot(x, y)
 
+def convert_memory_units(mem):
+    """
+    mem: RAM memory usage in MB to other units.
+    """
+    power = 1024
+    mem *= power ** 2   # first convert to kB
+    n = 0
+    power_labels = {0 : '', 1: 'k', 2: 'M', 3: 'G', 4: 'T'}
+    while mem > power:
+        mem /= power
+        n += 1
+    mem_str = f'{mem: .2f} {power_labels[n]}B'
+    
+    return mem_str
 
-if __name__ == '__main__':
+
+def main():
     T1 = time.time()
+    max_mem_boot, max_mem_avg, max_mem_read = 0, 0, 0
     # Step 1: Parse the arguments and set things up 
     rc('font', **{
        'family': 'sans-serif',
@@ -242,14 +285,10 @@ if __name__ == '__main__':
     if len(args.dir) > 1 and len(args.n_blocks) == 1:
         df_list, df_err_list = [], []  # if multi_dir
         plt.figure()
-    for folder in tqdm(args.dir):
+    for folder in args.dir:
         t1 = time.time()
-        # Note that args.colvar is different from colvar
-        colvar = folder + 'COLVAR_SUM_BIAS'  
-        if len(args.hills) == 1:
-            hills = folder + str(args.hills[0])
-        elif type(args.hills) == str:
-            hills = folder + args.hills
+        # Note that args.colvar is different from colvar_sum_bias
+        colvar_sum_bias = folder + 'COLVAR_SUM_BIAS'  
 
         if len(args.n_blocks) == 1:
             multi_b_size = False
@@ -341,9 +380,13 @@ if __name__ == '__main__':
             print('The input HILLS file for the plumed driver should be the one generated below.')
             print(f'The output COLVAR file contains the bias averaged over the last {avg_frac * 100}% of the simulation.')
             print('======================================================\n')
-
-            hills_avg = average_bias(plumed.read_as_pandas(args.hills), avg_frac)
+            
+            mem_avg, hills_avg = memory_usage((average_bias, (plumed.read_as_pandas(args.hills), avg_frac)), retval=True)
+            #hills_avg = average_bias(read_plumed_output(args.hills), avg_frac)
             plumed.write_pandas(hills_avg, args.hills + "_modified")
+            
+            if np.max(mem_avg) > max_mem_avg:
+                max_mem_avg = np.max(mem_avg)
 
             # A quick check of the HILLS input for the PLUMED input file for the plumed driver
             infile = open(p_input, 'r')
@@ -359,27 +402,16 @@ if __name__ == '__main__':
                 sys.exit()
 
             # Before running the plumed driver, we need to deal with the corrupted COLVAR, if any. 
-            # Case 1: The simulation was completed without timeout or any other crashing issue. 
-            # Case 2: The simulaiton crashed or stopped before reaching the last time frame (modification needed).
-            traj_colvar_1 = plumed.read_as_pandas(args.colvar)
-            traj_colvar_2 = traj_colvar_1[~traj_colvar_1["time"].duplicated(keep='last')]
-            traj_colvar_2 = traj_colvar_2.dropna()
-            traj_colvar_2 = traj_colvar_2.reset_index()
-            traj_colvar_2 = traj_colvar_2.drop(columns=["index"])
-            if len(traj_colvar_1) == len(traj_colvar_2):  # Case 1
-                pass    # COLVAR won't be modified and there will be no backup
-            else:       # Case 2
-                colvar_backup = args.colvar + '_backup'
-                os.system(f'mv {args.colvar} {colvar_backup}')
-                plumed.write_pandas(traj_colvar_2, f'{args.colvar}')
-
+            # Modify the COLVAR as needed in case that the simulation crashed or stpeed before reaching the last time frame.
+            mem_read, _ = memory_usage((read_plumed_output, (args.colvar, )), retval=True)
+            if np.max(mem_read) > max_mem_read:
+                max_mem_read = np.max(mem_read)
             os.system(f'plumed driver --plumed {p_input} --noatoms')
 
         # For any cases, the COLVAR file to be anayzed should be COLVAR_SUM_BIAS.
         os.chdir(os.path.dirname(script_path))
-        traj = plumed.read_as_pandas(colvar)  
-        traj = traj.loc[~traj["time"].duplicated(keep='last')]  # get rid of duplicated time frames
-
+        mem_read, traj = memory_usage((read_plumed_output, (colvar_sum_bias, )), retval=True)
+    
         # Step 3: Calculate the free energy surface and its uncertainty
         df_results = []
         n = int(len(traj) * (1 - truncate))  # number of data points considered
@@ -390,8 +422,15 @@ if __name__ == '__main__':
                 fes_path = f'{folder}/fes_truncate_{truncate}_bsize_{b_sizes[i]}_avg_{avg_frac}.dat'
             else:
                 fes_path = f'{folder}FES/fes_bsize_{b_sizes[i]}.dat'
-            df_results.append(block_bootstrap(
-                traj, n_blocks[i], args.factor, fes_path, B, T, truncate, args.CV_name))
+
+            bootstrap_args = (traj, n_blocks[i], args.factor, fes_path, B)
+            bootstrap_kw = {'T': T, 'truncate': truncate, 'CV': args.CV_name}
+            mem_boot, df_result = memory_usage((block_bootstrap, bootstrap_args, bootstrap_kw), retval=True)
+            df_results.append(df_result)
+
+            if np.max(mem_boot) > max_mem_boot:
+                max_mem_boot = np.max(mem_boot)
+
         df_results = np.array(df_results)
 
         # Tabulate the results in the results file
@@ -427,12 +466,29 @@ if __name__ == '__main__':
             plt.savefig(
                 folder + f'df_err_bsize_truncate_{truncate}_avg_{avg_frac}.png', dpi=600)
 
+        sec_str = '\nSection 3: Information about the analysis process'
+        L.logger(sec_str)
+        L.logger('=' * len(sec_str))
         L.logger(
-            f'\nFiles output by this code: fes*dat, HILLS*_modified, COLVAR_SUM_BIAS, df_err_bsize_truncate_{truncate}_avg_{avg_frac}.png, {result_file.split("/")[-1]}')
+            f'- Files output by this code: \n  fes*dat, HILLS*_modified, COLVAR_SUM_BIAS, df_err_bsize_truncate_{truncate}_avg_{avg_frac}.png, {result_file.split("/")[-1]}')
+        
+        # tabulate and document the maximum memory usage
+        table_data = []
+        table_data.append(['block_bootstrap', f'{convert_memory_units(max_mem_boot)}'])
+        table_data.append(['average_bias', f'{convert_memory_units(max_mem_avg)}'])
+        table_data.append(['read_plumed_output', f'{convert_memory_units(max_mem_read)}'])
+        
+        x = PrettyTable()
+        x.field_names = ['Function name', 'Max memory usage']
+        x.add_rows(table_data)
+        L.logger(f'- The size of the bootstrap array (n_bootstrap, n_block, block_size): ({args.n_bootstraps}, {n_blocks[i]}, {int(n / np.array(n_blocks))})')
+        L.logger('- Memory usage')
+        L.logger(x)
+          
         t2 = time.time()
-        L.logger(f'Time elapsed: {t2 - t1: .2f} seconds.')
+        L.logger(f'- Time elapsed: {t2 - t1: .2f} seconds.')
 
-    # Below are the liens for the Gaussian plot
+    # Below are the lines for the Gaussian plot
     if len(args.dir) > 1 and len(n_blocks) == 1:
         plt.xlabel('Free energy difference ($ k_{B}T $)')
         plt.ylabel('Probability density')
@@ -466,5 +522,25 @@ if __name__ == '__main__':
         L.logger(f'- The free energy difference of all reps: {df_str}')
         L.logger(
             f'- The uncertainty of free energy difference of all reps: {df_err_str}')
+        
+        sec_str = '\nSection 3: Information about the analysis process'
+        L.logger(sec_str)
+        L.logger('=' * len(sec_str))
+        
+        # tabulate and document the maximum memory usage
+        table_data = []
+        table_data.append(['block_bootstrap', f'{convert_memory_units(max_mem_boot)}'])
+        table_data.append(['average_bias', f'{convert_memory_units(max_mem_avg)}'])
+        table_data.append(['read_plumed_output', f'{convert_memory_units(max_mem_read)}'])
+        
+        x = PrettyTable()
+        x.field_names = ['Function name', 'Max memory usage']
+        x.add_rows(table_data)
+        L.logger(f'- The size of the bootstrap array (n_bootstrap, n_block, block_size): ({args.n_bootstraps}, {n_blocks[i]}, {int(n / np.array(n_blocks))})')
+        L.logger('- Memory usage')
+        L.logger(x)
+        
         T2 = time.time()
         L.logger(f'\nTotal time elapsed: {T2 - T1: .2f} seconds.')
+    
+    
