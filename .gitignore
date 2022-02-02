@@ -1,3 +1,8 @@
+alchemistry_toolkit/analysis/examples/COLVAR
+alchemistry_toolkit/analysis/examples/COLVAR_SUM_BIAS
+alchemistry_toolkit/analysis/examples/lambda_MetaD_data/COLVAR*
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

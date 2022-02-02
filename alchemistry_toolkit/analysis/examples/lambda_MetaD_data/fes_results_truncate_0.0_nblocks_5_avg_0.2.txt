@@ -1,0 +1,35 @@
+Section 1: Parameters for data analysis
+=======================================
+- Command line: /usr/local/bin/bootstrap_estimator -d examples/lambda_MetaD_data/ -n 5 -t 0 -s 1994 -hh HILLS_2D -a 0.2
+- Current working directory: examples/lambda_MetaD_data/
+- Files analyzed/used: plumed_sum_bias.dat, HILLS_2D, and COLVAR output by the simulation
+- Number of blocks: [5]
+- Number of bootstrap iterations: 200
+- Truncated fraction: 0.0
+- Averaged fraction: 0.2
+- Random seed: 1994
+- STRIDE in ps: 0.02
+- Simulation temperature: 298.15
+
+Section 2: Results of free energy calculations
+==============================================
++-------------+-----------------+-----------------------------+------------------+
+| # of blocks | Block size (ps) | Free energy difference (kT) | Uncertainty (kT) |
++-------------+-----------------+-----------------------------+------------------+
+|      5      |     10000.00    |           15.512846         |     0.035534     |
++-------------+-----------------+-----------------------------+------------------+
+
+Section 3: Information about the analysis process
+==================================================
+- Files output by this code: 
+  fes*dat, HILLS*_modified, COLVAR_SUM_BIAS, df_err_bsize_truncate_0.0_avg_0.2.png, fes_results_truncate_0.0_nblocks_5_avg_0.2.txt
+- The size of the bootstrap array (n_bootstrap, n_block, block_size): (200, 5, 500000)
+- Memory usage
++--------------------+------------------+
+|   Function name    | Max memory usage |
++--------------------+------------------+
+|  block_bootstrap   |      8.08 GB     |
+|    average_bias    |     147.82 MB    |
+| read_plumed_output |     501.93 MB    |
++--------------------+------------------+
+- Time elapsed:  163.46 seconds.
